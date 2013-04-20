@@ -22,12 +22,9 @@ import com.stackmob.newman.caching.{Milliseconds, InMemoryHttpResponseCacher}
  */
 class Handler extends AbstractHandler {
 
-  private implicit val executorSvc = Executors.newCachedThreadPool() //newFixedThreadPool(1000)
+  private implicit val executorSvc = Executors.newCachedThreadPool()
   private implicit val strategy = Strategy.Executor(executorSvc)
   private val apacheHttpClient = new ApacheHttpClient(strategy = strategy)
-  private val cacher = new InMemoryHttpResponseCacher
-  private val ttl = Milliseconds(1000)
-  private val cachingHttpClient = new ReadCachingHttpClient(apacheHttpClient, cacher, ttl)
 
   override def handle(target: String,
                       request: Request,
@@ -36,7 +33,7 @@ class Handler extends AbstractHandler {
     val continuation = ContinuationSupport.getContinuation(request)
     continuation.setTimeout(500)
     continuation.suspend()
-    implicit val httpClient = cachingHttpClient
+    implicit val httpClient = apacheHttpClient
 
     GET(new URL("http://httpbin.org/get")).executeAsyncUnsafe.map { resp =>
       request.setHandled(true)
